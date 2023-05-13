@@ -32,5 +32,3 @@ class Config(metaclass=Singleton):
 
     def __init__(self):
         self.openai_api_key = os.getenv("OPENAI_API_KEY", "None")
-        self.model = os.getenv("MODEL", "None")
-        self.debug_mode = os.getenv("DEBUG_MODE", "False")
