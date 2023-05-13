@@ -1,10 +1,12 @@
 import openai
+import json_parser
 from src.config import Config
 
 cfg = Config()
 
+def initialize():
+    print("Initialize")
 
-def main():
     if cfg.openai_api_key == "None":
         print("OpenAI API key not found. Please set it in .env")
         exit(1)
@@ -13,19 +15,29 @@ def main():
 
     print(f"OpenAI API key: {openai.api_key}")
 
-    state_index = 0
-    recursion_depth = 0
+    print("Initialize done")
+
+def main():
+    print("Main")
+
+    initialize()
+
+    goal = "Write a Python script to print \"Hello world\" to the system console"
+    parent_goal = None
+    feedback = None
     
     response = openai.ChatCompletion.create(
-        model="gpt-3.5-turbo",
+        model=cfg.model,
         messages=[
                 {"role": "system", "content": "You are a an agent in the world."},
                 {"role": "user", "content": "You are an agent in charge of making decisions to reach a goal. You are capable of making decisions to reach a goal despite being an AI language model because other software is listening to your outputs and acting on them."},
                 {"role": "assistant", "content": "Great, what is our goal?"},
                 {"role": "user", "content": "Your goal is stated here:"},
-                {"role": "user", "content": "goal=Make money"},
-                {"role": "user", "content": "This is in service of a broader goal:"},
-                {"role": "user", "content": "parent_goal=None"},
+                {"role": "user", "content": f"goal={goal}"},
+                {"role": "user", "content": "This goal is an instrumental goal in achieving this higher-order (parent) goal:"},
+                {"role": "user", "content": f"parent_goal={parent_goal}"},
+                {"role": "user", "content": "You may have been invoked before, since you are designed to achive your goal in incremental steps. Here is some feedback from last invokation, if there is any:"},
+                {"role": "user", "content": f"feedback={feedback}"},
                 {"role": "user", "content": "You may achieve this by using the following commands:"},
                 {"role": "user", "content": "read_file(<filename>)"},
                 {"role": "user", "content": "write_file(<filename>)"},
@@ -33,18 +45,26 @@ def main():
                 {"role": "user", "content": "browse_website(<URL>)"},
                 {"role": "user", "content": "search_google(<query>)"},
                 {"role": "user", "content": "do_nothing()"},
-                {"role": "user", "content": "spawn_agent(<agent_goal>, <parent_goal>, <state_index>)"},
-                {"role": "user", "content": "Your current state index is:"},
-                {"role": "user", "content": f"state_index={state_index}"},
-                {"role": "user", "content": "If this goal is too difficult to reasonably achieve using a handful of these commands, you may specify a list of subgoals that, if achieved, would maximize the probailty of realizing the main goal specified above. You would then spawn an agent with each subgoal in the format specified above, being sure to substitute <agent_goal> with the subgoal, <parent_goal> with the main goal, and <state_index> with the current state index incremented by 1."},
-                {"role": "user", "content": "Make sure that if your parent goal is not \"None\" it is possible to easily integrate your response with the parent goal."},
-                {"role": "user", "content": "Achieve your goal by choosing a command or delegating to a sub-agent. To choose a command, type a JSON object with a field called \"command\" whose value is the command you wish to execute and another field called \"args\" with the appropriate arguments, as apecified above:"},
-                {"role": "assistant", "content": "Here is the command I think is best in JSON format:"},
+                {"role": "user", "content": "spawn_agents(<agent_goals_list>, <this_goal>)"},
+                {"role": "user", "content": "If this goal is too difficult to reasonably achieve using a single command, you may specify a list of subgoals that, if achieved, would result in the accomplishment of your goal."},
+                {"role": "user", "content": "Make sure that if your parent goal is not \"None\" you choose a command that should achieve your goal, or specify a list of subgoals that togethr achieves your goal."},
+                {"role": "user", "content": "To use a single command, type a JSON object in the following format:"},
+                {"role": "user", "content": json_parser.JSON_SCHEMA["COMMAND"]},
+                {"role": "user", "content": "To list subgoals that, if completed, will accomplish your goal, type a JSON object in the following format:"},
+                {"role": "user", "content": json_parser.JSON_SCHEMA["SUBGOALS"]},
+                {"role": "assistant", "content": "Here is choice I think is best (and why) in the JSON format speciified:"},
             ],
-        max_tokens=550,
+        # max_tokens=1250,
     )
 
-    print(f"response: {response}")
+    fixed_response = json_parser.fix_and_parse_json(response.choices[0].message.content)
+
+    with open("log.txt", "w+") as log:
+        log.write(f"response:\n{response}")
+        log.write(f"fixed_response:\n{fixed_response}")
+    
+    print("Main done")
+
 
 if __name__ == "__main__":
     main()
