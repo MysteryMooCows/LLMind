@@ -1,1 +1,0 @@
-This is the text written to the file.
