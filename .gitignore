@@ -94,3 +94,6 @@ target/
 # Scratch work
 notebooks/scratch.ipynb
 src/scratch.py
+
+# Scratch output
+src/*.txt
