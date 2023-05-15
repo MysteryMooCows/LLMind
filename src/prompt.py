@@ -9,10 +9,11 @@ class Prompt(Loggable):
     def __init__(self):
         super().__init__()
 
-    def send(self, stop=None):
+    def send(self, max_tokens=None, stop=None):
         response = openai.ChatCompletion.create(
             model=cfg.model,
             messages=self.log_data,
+            max_tokens=max_tokens,
             stop=stop
         )
 
